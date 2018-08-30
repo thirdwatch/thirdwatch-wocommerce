@@ -64,11 +64,35 @@ final class Thirdwatch {
      * WooCommerce Constructor.
      */
     public function __construct() {
-        // Do not proceed if WooCommerce is not installed.
+
+
         add_action( 'rest_api_init', array($this, 'score_postback' ));
         add_action( 'rest_api_init', array($this, 'action_postback' ));
         $this->define_constants();
         $this->includes();
+
+        //         Do not proceed if WooCommerce is not installed.
+        if ( ! class_exists( 'WC_Dependencies' ) )
+        {
+            include_once TW_ABSPATH . 'includes/class-tw-dependencies.php';
+        }
+
+        if ( ! function_exists( 'tw_is_woocommerce_active' ) ) {
+            function tw_is_woocommerce_active() {
+                return TW_Dependencies::woocommerce_active_check();
+            }
+        }
+
+        if ( ! function_exists( 'tw_is_osm_active' ) ) {
+            function tw_is_osm_active() {
+                return TW_Dependencies::orderstatusmanager_active_check();
+            }
+        }
+
+        if ( ! tw_is_woocommerce_active() ) {
+            return;
+        }
+
         $this->init_hooks();
     }
 
@@ -174,6 +198,18 @@ final class Thirdwatch {
                 }
                 $customers = $wpdb->update("wp_tw_orders", array("flag"=>$flag, "status" => $status,"score" => (string) $score , "date_modified"=>$dt->format('Y-m-d H:i:s')), array("order_id" => $order_id));
             }
+            $this->order = wc_get_order( $order_id );
+
+            if ( $flag ==  "red") {
+                if ( $this->review_status && $this->review_status != $this->order->get_status() ) {
+                    $this->order->update_status( $this->review_status, __( '', $this->namespace ) );
+                }
+            }
+            elseif ( $flag == "green" ) {
+                if ( $this->approve_status && $this->approve_status != $this->order->get_status() ) {
+                    $this->order->update_status( $this->approve_status, __( '', $this->namespace ) );
+                }
+            }
         }
         catch (Exception $e){
 
@@ -206,6 +242,19 @@ final class Thirdwatch {
                     $comment = "";
                 }
                 $customers = $wpdb->update("wp_tw_orders", array("action"=>$action, "message" => $comment, "date_modified"=>$dt->format('Y-m-d H:i:s')), array("order_id" => $order_id));
+
+                $this->order = wc_get_order( $order_id );
+
+                if ( $action_type == "declined" ) {
+                    if ( $this->reject_status && $this->reject_status != $this->order->get_status() ) {
+                        $this->order->update_status( $this->reject_status, __( '', $this->namespace ) );
+                    }
+                }
+                elseif ( $action_type ==  "approved" ) {
+                    if ( $this->approve_status && $this->approve_status != $this->order->get_status() ) {
+                        $this->order->update_status( $this->approve_status, __( '', $this->namespace ) );
+                    }
+                }
             }
         }
         catch (Exception $e){
@@ -534,17 +583,28 @@ final class Thirdwatch {
         }
 
         $form_status = '';
+        $wc_order_statuses = array();
 
-        $wc_order_statuses = array(
-            ''              => 'No Status Change',
-            'wc-pending'    => 'Pending Payment',
-            'wc-processing' => 'Processing',
-            'wc-on-hold'    => 'On Hold',
-            'wc-completed'  => 'Completed',
-            'wc-cancelled'  => 'Cancelled',
-            'wc-refunded'   => 'Refunded',
-            'wc-failed'     => 'Failed',
-        );
+        if ( ! tw_is_osm_active() ) {
+            $wc_order_statuses = array(
+                ''              => 'No Status Change',
+                'wc-pending'    => 'Pending Payment',
+                'wc-processing' => 'Processing',
+                'wc-on-hold'    => 'On Hold',
+                'wc-completed'  => 'Completed',
+                'wc-cancelled'  => 'Cancelled',
+                'wc-refunded'   => 'Refunded',
+                'wc-failed'     => 'Failed',
+            );
+        }
+        else {
+            global $wpdb;
+            $tablename = $wpdb->prefix.'posts';
+            $result = $wpdb->get_results ( "SELECT post_title, post_name FROM  ".$tablename ." WHERE post_type = 'wc_order_status' and post_status = 'publish'" );
+            foreach ( $result as $value){
+                $wc_order_statuses[$value->post_name] = $value->post_title;
+            }
+        }
 
         $enable_wc_tw = ( isset( $_POST['submit'] ) && isset( $_POST['enable_wc_tw'] ) ) ? 'yes' : ( ( ( isset( $_POST['submit'] ) && !isset( $_POST['enable_wc_tw'] ) ) ) ? 'no' : $this->get_setting( 'enabled' ) );
 
