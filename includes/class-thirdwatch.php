@@ -29,11 +29,7 @@ final class Thirdwatch {
     private $reject_status;
     private $fraud_message;
     private $debug_log;
-
-
     public $version = '1.0.0';
-
-    protected $api = 'http://pugme.herokuapp.com/bomb?count=';
 
     /**
      * Main Thirdwatch Instance.
@@ -52,47 +48,15 @@ final class Thirdwatch {
         return self::$_instance;
     }
 
-    public function check_for_woocommerce() {
-        if (!defined('WC_VERSION')) {
-            // no woocommerce :(
-        } else {
-            var_dump("WooCommerce installed in version", WC_VERSION);
-        }
-    }
-
-        /**
+    /**
      * WooCommerce Constructor.
      */
     public function __construct() {
-
 
         add_action( 'rest_api_init', array($this, 'score_postback' ));
         add_action( 'rest_api_init', array($this, 'action_postback' ));
         $this->define_constants();
         $this->includes();
-
-        //         Do not proceed if WooCommerce is not installed.
-        if ( ! class_exists( 'WC_Dependencies' ) )
-        {
-            include_once TW_ABSPATH . 'includes/class-tw-dependencies.php';
-        }
-
-        if ( ! function_exists( 'tw_is_woocommerce_active' ) ) {
-            function tw_is_woocommerce_active() {
-                return TW_Dependencies::woocommerce_active_check();
-            }
-        }
-
-        if ( ! function_exists( 'tw_is_osm_active' ) ) {
-            function tw_is_osm_active() {
-                return TW_Dependencies::orderstatusmanager_active_check();
-            }
-        }
-
-        if ( ! tw_is_woocommerce_active() ) {
-            return;
-        }
-
         $this->init_hooks();
     }
 
