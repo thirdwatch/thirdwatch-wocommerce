@@ -656,7 +656,7 @@ final class Thirdwatch {
                     'action_postback'=>$actionPostback,
                     'secret'=>$api_key
                 );
-                $response = wp_remote_post("https://staging.thirdwatch.co/neo/v1/addpostbackurl/", array(
+                $response = wp_remote_post("https://api.thirdwatch.ai/neo/v1/addpostbackurl/", array(
                     'method' => 'POST',
                     'headers' => array('Content-Type' => 'application/json; charset=utf-8'),
                     'httpversion' => '1.0',
@@ -701,7 +701,7 @@ final class Thirdwatch {
                         <td>
                             <input type="text" name="api_key" id="api_key" maxlength="32" value="' . $api_key . '" class="regular-text code" />
                             <p class="description">
-                                You can sign up for a free API key at <a href="https://www.thirdwatch.ai/https://www.thirdwatch.ai/pricing.html?utm_source=module&utm_medium=banner&utm_term=woocommerce&utm_campaign=module%20banner" target="_blank">Thirdwatch</a>.
+                                You can sign up for a free API key at <a href="https://dashboard.thirdwatch.ai/login?utm_source=module&utm_medium=banner&utm_term=woocommerce&utm_campaign=module%20banner" target="_blank">Thirdwatch</a>.
                             </p>
                         </td>
                     </tr>

@@ -81,7 +81,7 @@ class Configuration
      *
      * @var string
      */
-    protected $host = 'https://staging.thirdwatch.co/event';
+    protected $host = 'https://api.thirdwatch.ai/event';
 
     /**
      * User agent of the HTTP request, set to "PHP-Swagger" by default
