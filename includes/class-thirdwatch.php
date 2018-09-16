@@ -341,7 +341,7 @@ final class Thirdwatch {
         $isPrepaid = false;
         $ip = $_SERVER['REMOTE_ADDR'];
 
-        if ($this->order->get_payment_method() == "cod"){
+        if (($this->order->get_payment_method() == "cod") || ($this->order->get_payment_method() == "robu_cod")){
             $isPrepaid = false;
         }
         else {
