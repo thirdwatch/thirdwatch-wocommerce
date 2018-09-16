@@ -164,12 +164,12 @@ final class Thirdwatch {
             }
             $this->order = wc_get_order( $order_id );
 
-            if ( $flag ==  "red") {
+            if ( $flag ==  "RED") {
                 if ( $this->review_status && $this->review_status != $this->order->get_status() ) {
                     $this->order->update_status( $this->review_status, __( '', $this->namespace ) );
                 }
             }
-            elseif ( $flag == "green" ) {
+            elseif ( $flag == "GREEN" ) {
                 if ( $this->approve_status && $this->approve_status != $this->order->get_status() ) {
                     $this->order->update_status( $this->approve_status, __( '', $this->namespace ) );
                 }
@@ -367,7 +367,7 @@ final class Thirdwatch {
         $orderData = array();
 
         if (is_user_logged_in()){
-            $orderData['_user_id'] = (string) WC()->session->get_customer_id();
+            $orderData['_user_id'] = (string) get_current_user_id();
         }
         else {
             $orderData['_session_id'] = (string) WC()->session->get_customer_id();
@@ -435,7 +435,7 @@ final class Thirdwatch {
 
         $txnData = array();
         if (is_user_logged_in()){
-            $txnData['_user_id'] = (string) WC()->session->get_customer_id();
+            $txnData['_user_id'] = (string) get_current_user_id();
         }
         else {
             $txnData['_session_id'] = (string) WC()->session->get_customer_id();
