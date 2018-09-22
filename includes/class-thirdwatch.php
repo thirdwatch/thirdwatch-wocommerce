@@ -118,7 +118,7 @@ final class Thirdwatch {
         add_action( 'manage_shop_order_posts_custom_column', array( $this, 'render_column' ), 3 );
         add_action( 'woocommerce_created_customer', array( $this, 'register' ), 99, 3 );
         add_action( 'wp_login', array( $this, 'login'), 99, 2 );
-        add_action( 'woocommerce_thankyou', array($this, 'get_orders'), 99, 1);
+        add_action( 'woocommerce_new_order', array($this, 'get_orders'), 99, 1);
         add_action( 'woocommerce_order_status_changed', array( $this, 'order_status_changed' ), 99, 3 );
     }
 
@@ -137,48 +137,75 @@ final class Thirdwatch {
     }
 
     public function score_postback_route( WP_REST_Request $request ) {
+        $this->write_debug_log("Score Postback Called");
+
         global $wpdb;
         $dt = new DateTime();
-        $this->write_debug_log("Scoreback Called");
         $response_json = $request->get_json_params();
+        $headers = $request->get_headers();
+        $response_score = array();
 
-        try {
-            if ($response_json){
-                $order_id = $response_json['order_id'];
-                $flag = $response_json['flag'];
-                $score = $response_json['score'];
-
-                if ($flag ==  "red"){
-                    $status = "FLAGGED";
-                    $flag = "RED";
-                }
-                elseif ($flag == "green"){
-                    $status = "APPROVED";
-                    $flag = "GREEN";
-                }
-                else{
-                    $status = "HOLD";
-                    $flag = "";
-                }
-                $customers = $wpdb->update("wp_tw_orders", array("flag"=>$flag, "status" => $status,"score" => (string) $score , "date_modified"=>$dt->format('Y-m-d H:i:s')), array("order_id" => $order_id));
+        if ($headers){
+            try {
+                $api_key = $headers['x_thirdwatch_api_key'][0];
             }
-            $this->order = wc_get_order( $order_id );
+            catch (\Throwable $e){
+                $response_score['Error'] = "Authentication Failed";
+                return new WP_REST_Response($response_score, 400, array('content-type'=>'application/json'));
+            }
 
-            if ( $flag ==  "RED") {
-                if ( $this->review_status && $this->review_status != $this->order->get_status() ) {
-                    $this->order->update_status( $this->review_status, __( '', $this->namespace ) );
+            if ($api_key == $this->api_key){
+                try {
+                    if ($response_json){
+                        $order_id = $response_json['order_id'];
+                        $flag = $response_json['flag'];
+                        $score = $response_json['score'];
+                        $this->order = wc_get_order( $order_id );
+
+                        if ($flag ==  "red"){
+                            $status = "FLAGGED";
+                            $flag = "RED";
+                        }
+                        elseif ($flag == "green"){
+                            $status = "APPROVED";
+                            $flag = "GREEN";
+                        }
+                        else{
+                            $status = "HOLD";
+                            $flag = "";
+                        }
+
+                        $customers = $wpdb->update("wp_tw_orders", array("flag"=>$flag, "status" => $status,"score" => (string) $score , "date_modified"=>$dt->format('Y-m-d H:i:s')), array("order_id" => $order_id));
+
+                        if ( $flag ==  "RED") {
+                            if ( $this->review_status && $this->review_status != $this->order->get_status() ) {
+                                $this->order->update_status( $this->review_status, __( '', $this->namespace ) );
+                            }
+                        }
+                        elseif ( $flag == "GREEN" ) {
+                            if ( $this->approve_status && $this->approve_status != $this->order->get_status() ) {
+                                $this->order->update_status( $this->approve_status, __( '', $this->namespace ) );
+                            }
+                        }
+                        $response_score['Success'] = "Success";
+                        return new WP_REST_Response($response_score, 200, array('content-type'=>'application/json'));
+                    }
+                    $response_score['Error'] = "Response Incorrect";
+                    return new WP_REST_Response($response_score, 400, array('content-type'=>'application/json'));
+                }
+                catch (\Throwable $e) {
+                    $this->write_debug_log($e->getMessage());
+                    $response_score['Error'] = "Authentication Failed";
+                    return new WP_REST_Response($response_score, 400, array('content-type'=>'application/json'));
                 }
             }
-            elseif ( $flag == "GREEN" ) {
-                if ( $this->approve_status && $this->approve_status != $this->order->get_status() ) {
-                    $this->order->update_status( $this->approve_status, __( '', $this->namespace ) );
-                }
+            else{
+                $response_score['Error'] = "Authentication Failed";
+                return new WP_REST_Response($response_score, 400, array('content-type'=>'application/json'));
             }
         }
-        catch (\Throwable $e) {
-            $this->write_debug_log($e->getMessage());
-        }
-        return $this->send_response('200 OK', json_decode());
+        $response_score['Error'] = "Authentication Failed";
+        return new WP_REST_Response($response_score, 400, array('content-type'=>'application/json'));
     }
 
 
@@ -187,44 +214,66 @@ final class Thirdwatch {
         $dt = new DateTime();
         $this->write_debug_log("Action Postback Called");
         $response_json = $request->get_json_params();
+        $headers = $request->get_headers();
+        $response_score = array();
 
-        try {
-            if ($response_json){
-                $order_id = $response_json['order_id'];
-                $action_type = $response_json['action_type'];
-                $action_message = $response_json['action_message'];
-                if ($action_type ==  "approved"){
-                    $action = "APPROVED";
-                    $comment = $action_message;
-                }
-                elseif ($action_type == "declined"){
-                    $action = "DECLINED";
-                    $comment = $action_message;
-                }
-                else{
-                    $action = "";
-                    $comment = "";
-                }
-                $customers = $wpdb->update("wp_tw_orders", array("action"=>$action, "message" => $comment, "date_modified"=>$dt->format('Y-m-d H:i:s')), array("order_id" => $order_id));
+        if ($headers) {
+            try {
+                $api_key = $headers['x_thirdwatch_api_key'][0];
+            } catch (\Throwable $e) {
+                $response_score['Error'] = "Authentication Failed";
+                return new WP_REST_Response($response_score, 400, array('content-type' => 'application/json'));
+            }
 
-                $this->order = wc_get_order( $order_id );
+            if ($api_key == $this->api_key) {
 
-                if ( $action_type == "declined" ) {
-                    if ( $this->reject_status && $this->reject_status != $this->order->get_status() ) {
-                        $this->order->update_status( $this->reject_status, __( '', $this->namespace ) );
+                try {
+                    if ($response_json) {
+                        $order_id = $response_json['order_id'];
+                        $action_type = $response_json['action_type'];
+                        $action_message = $response_json['action_message'];
+
+                        if ($action_type == "approved") {
+                            $action = "APPROVED";
+                            $comment = $action_message;
+                        } elseif ($action_type == "declined") {
+                            $action = "DECLINED";
+                            $comment = $action_message;
+                        } else {
+                            $action = "";
+                            $comment = "";
+                        }
+                        $customers = $wpdb->update("wp_tw_orders", array("action" => $action, "message" => $comment, "date_modified" => $dt->format('Y-m-d H:i:s')), array("order_id" => $order_id));
+
+                        $this->order = wc_get_order($order_id);
+
+                        if ($action_type == "declined") {
+                            if ($this->reject_status && $this->reject_status != $this->order->get_status()) {
+                                $this->order->update_status($this->reject_status, __('', $this->namespace));
+                            }
+                        } elseif ($action_type == "approved") {
+                            if ($this->approve_status && $this->approve_status != $this->order->get_status()) {
+                                $this->order->update_status($this->approve_status, __('', $this->namespace));
+                            }
+                        }
+                        $response_score['Success'] = "Success";
+                        return new WP_REST_Response($response_score, 200, array('content-type'=>'application/json'));
                     }
-                }
-                elseif ( $action_type ==  "approved" ) {
-                    if ( $this->approve_status && $this->approve_status != $this->order->get_status() ) {
-                        $this->order->update_status( $this->approve_status, __( '', $this->namespace ) );
-                    }
+                    $response_score['Error'] = "Response Incorrect";
+                    return new WP_REST_Response($response_score, 400, array('content-type'=>'application/json'));
+                } catch (\Throwable $e) {
+                    $this->write_debug_log($e->getMessage());
+                    $response_score['Error'] = "Authentication Failed";
+                    return new WP_REST_Response($response_score, 400, array('content-type'=>'application/json'));
                 }
             }
+            else{
+                $response_score['Error'] = "Authentication Failed";
+                return new WP_REST_Response($response_score, 400, array('content-type'=>'application/json'));
+            }
         }
-        catch (\Throwable $e) {
-            $this->write_debug_log($e->getMessage());
-        }
-        return $this->send_response('200 OK', json_decode());
+        $response_score['Error'] = "Authentication Failed";
+        return new WP_REST_Response($response_score, 400, array('content-type'=>'application/json'));
     }
 
     public function login( $user_login, $user ) {
@@ -311,6 +360,16 @@ final class Thirdwatch {
     }
 
     public function get_orders($order_id){
+        $this->write_debug_log("Order Id ".$order_id);
+
+        global $wpdb;
+        $tablename = $wpdb->prefix.'tw_orders';
+        $result = $wpdb->get_results ( "SELECT * FROM  ".$tablename ." WHERE order_id = '".$order_id."'" );
+
+        if ($result){
+            return;
+        }
+
         $this->order = wc_get_order( $order_id );
         $this->tw_order_transaction();
     }
@@ -318,6 +377,7 @@ final class Thirdwatch {
     public function order_status_changed($order_id, $old_status, $new_status){
         $config = \ai\thirdwatch\Configuration::getDefaultConfiguration()->setApiKey('X-THIRDWATCH-API-KEY', $this->api_key);
         $this->order = wc_get_order( $order_id );
+
         global $wpdb;
         $tablename = $wpdb->prefix.'tw_orders';
         $result = $wpdb->get_results ( "SELECT * FROM  ".$tablename ." WHERE order_id = '".$order_id."'" );
