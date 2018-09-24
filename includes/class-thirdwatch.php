@@ -179,12 +179,12 @@ final class Thirdwatch {
 
                         if ( $flag ==  "RED") {
                             if ( $this->review_status && $this->review_status != $this->order->get_status() ) {
-                                $this->order->update_status( $this->review_status, __( '', $this->namespace ) );
+                                $this->order->update_status( $this->review_status, __( 'Updated by Thirdwatch: ', $this->namespace ) );
                             }
                         }
                         elseif ( $flag == "GREEN" ) {
                             if ( $this->approve_status && $this->approve_status != $this->order->get_status() ) {
-                                $this->order->update_status( $this->approve_status, __( '', $this->namespace ) );
+                                $this->order->update_status( $this->approve_status, __( 'Updated by Thirdwatch: ', $this->namespace ) );
                             }
                         }
                         $response_score['Success'] = "Success";
@@ -249,11 +249,11 @@ final class Thirdwatch {
 
                         if ($action_type == "declined") {
                             if ($this->reject_status && $this->reject_status != $this->order->get_status()) {
-                                $this->order->update_status($this->reject_status, __('', $this->namespace));
+                                $this->order->update_status($this->reject_status, __('Updated by Thirdwatch: ', $this->namespace));
                             }
                         } elseif ($action_type == "approved") {
                             if ($this->approve_status && $this->approve_status != $this->order->get_status()) {
-                                $this->order->update_status($this->approve_status, __('', $this->namespace));
+                                $this->order->update_status($this->approve_status, __('Updated by Thirdwatch: ', $this->namespace));
                             }
                         }
                         $response_score['Success'] = "Success";
