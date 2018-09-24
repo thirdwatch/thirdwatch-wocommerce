@@ -118,7 +118,7 @@ final class Thirdwatch {
         add_action( 'manage_shop_order_posts_custom_column', array( $this, 'render_column' ), 3 );
         add_action( 'woocommerce_created_customer', array( $this, 'register' ), 99, 3 );
         add_action( 'wp_login', array( $this, 'login'), 99, 2 );
-        add_action( 'woocommerce_new_order', array($this, 'get_orders'), 99, 1);
+        add_action( 'woocommerce_thankyou', array($this, 'get_orders'), 99, 1);
         add_action( 'woocommerce_order_status_changed', array( $this, 'order_status_changed' ), 99, 3 );
     }
 
@@ -360,18 +360,25 @@ final class Thirdwatch {
     }
 
     public function get_orders($order_id){
-        $this->write_debug_log("Order Id ".$order_id);
+        try {
+            global $wpdb;
+            $this->order = wc_get_order($order_id);
 
-        global $wpdb;
-        $tablename = $wpdb->prefix.'tw_orders';
-        $result = $wpdb->get_results ( "SELECT * FROM  ".$tablename ." WHERE order_id = '".$order_id."'" );
+            if ($this->order->status == "processing"){
 
-        if ($result){
-            return;
+                $tablename = $wpdb->prefix.'tw_orders';
+                $result = $wpdb->get_results ( "SELECT * FROM  ".$tablename ." WHERE order_id = '".$order_id."'" );
+                if ($result){
+                    return;
+                }
+
+                $this->write_debug_log("Order sent to Thirdwatch. Order Id - ".$order_id);
+                $this->tw_order_transaction();
+            }
         }
-
-        $this->order = wc_get_order( $order_id );
-        $this->tw_order_transaction();
+        catch (\Throwable $e) {
+            $this->write_debug_log($e->getMessage());
+        }
     }
 
     public function order_status_changed($order_id, $old_status, $new_status){
