@@ -277,73 +277,77 @@ final class Thirdwatch {
     }
 
     public function login( $user_login, $user ) {
-        $config = \ai\thirdwatch\Configuration::getDefaultConfiguration()->setApiKey('X-THIRDWATCH-API-KEY', $this->api_key);
-        $customerInfo = array();
-        $sessionInfo = array();
+        if ($this->enabled == 'yes'){
+            $config = \ai\thirdwatch\Configuration::getDefaultConfiguration()->setApiKey('X-THIRDWATCH-API-KEY', $this->api_key);
+            $customerInfo = array();
+            $sessionInfo = array();
 
-        try{
-            $customerInfo['_user_id'] = (string) $user->get('ID');
-            $customerInfo['_session_id'] = (string) WC()->session->get_customer_id();
-            $customerInfo['_device_ip'] = (string) $_SERVER['REMOTE_ADDR'];
-            $customerInfo['_origin_timestamp'] = (string) (time() * 1000);
-            $customerInfo['_login_status'] = "_success";
+            try{
+                $customerInfo['_user_id'] = (string) $user->get('ID');
+                $customerInfo['_session_id'] = (string) WC()->session->get_customer_id();
+                $customerInfo['_device_ip'] = (string) $_SERVER['REMOTE_ADDR'];
+                $customerInfo['_origin_timestamp'] = (string) (time() * 1000);
+                $customerInfo['_login_status'] = "_success";
 
-            $api_instance = new \ai\thirdwatch\Api\LoginApi(new GuzzleHttp\Client(), $config);
-            $json = new \ai\thirdwatch\Model\Login($customerInfo);
-        }
-        catch (\Throwable $e) {
-            $this->write_debug_log($e->getMessage());
-        }
+                $api_instance = new \ai\thirdwatch\Api\LoginApi(new GuzzleHttp\Client(), $config);
+                $json = new \ai\thirdwatch\Model\Login($customerInfo);
+            }
+            catch (\Throwable $e) {
+                $this->write_debug_log($e->getMessage());
+            }
 
-        try {
-            $result = $api_instance->login($json);
-        }
-        catch (\Throwable $e) {
-            $this->write_debug_log($e->getMessage());
-        }
+            try {
+                $result = $api_instance->login($json);
+            }
+            catch (\Throwable $e) {
+                $this->write_debug_log($e->getMessage());
+            }
 
-        try{
-            $sessionInfo['_user_id'] = (string) $user->get('ID');
-            $sessionInfo['_session_id'] = (string) WC()->session->get_customer_id();
-            $api_instance2 = new \ai\thirdwatch\Api\LinkSessionToUserApi(new GuzzleHttp\Client(), $config);
-            $json2 = new \ai\thirdwatch\Model\LinkSessionToUser($sessionInfo);
-            $result2 = $api_instance2->linkSessionToUser($json2);
-        }
-        catch (\Throwable $e) {
-            $this->write_debug_log($e->getMessage());
+            try{
+                $sessionInfo['_user_id'] = (string) $user->get('ID');
+                $sessionInfo['_session_id'] = (string) WC()->session->get_customer_id();
+                $api_instance2 = new \ai\thirdwatch\Api\LinkSessionToUserApi(new GuzzleHttp\Client(), $config);
+                $json2 = new \ai\thirdwatch\Model\LinkSessionToUser($sessionInfo);
+                $result2 = $api_instance2->linkSessionToUser($json2);
+            }
+            catch (\Throwable $e) {
+                $this->write_debug_log($e->getMessage());
+            }
         }
     }
 
     public function register($customer_id, $new_customer_data, $password_generated){
-        $config = \ai\thirdwatch\Configuration::getDefaultConfiguration()->setApiKey('X-THIRDWATCH-API-KEY', $this->api_key);
-        $customerInfo = array();
-        $sessionInfo = array();
+        if ($this->enabled == 'yes'){
+            $config = \ai\thirdwatch\Configuration::getDefaultConfiguration()->setApiKey('X-THIRDWATCH-API-KEY', $this->api_key);
+            $customerInfo = array();
+            $sessionInfo = array();
 
-        try{
-            $customerInfo['_user_id'] = (string) $customer_id;
-            $customerInfo['_session_id'] = (string) WC()->session->get_customer_id();
-            $customerInfo['_device_ip'] = (string) $_SERVER['REMOTE_ADDR'];
-            $customerInfo['_origin_timestamp'] = (string) (time() * 1000);
-            $customerInfo['_user_email'] = (string) $new_customer_data['user_email'];
-            $customerInfo['_account_status'] = '_active';
+            try{
+                $customerInfo['_user_id'] = (string) $customer_id;
+                $customerInfo['_session_id'] = (string) WC()->session->get_customer_id();
+                $customerInfo['_device_ip'] = (string) $_SERVER['REMOTE_ADDR'];
+                $customerInfo['_origin_timestamp'] = (string) (time() * 1000);
+                $customerInfo['_user_email'] = (string) $new_customer_data['user_email'];
+                $customerInfo['_account_status'] = '_active';
 
-            $api_instance = new \ai\thirdwatch\Api\CreateAccountApi(new GuzzleHttp\Client(), $config);
-            $json = new \ai\thirdwatch\Model\CreateAccount($customerInfo);
-            $result = $api_instance->createAccount($json);
-        }
-        catch (\Throwable $e) {
-            $this->write_debug_log($e->getMessage());
-        }
+                $api_instance = new \ai\thirdwatch\Api\CreateAccountApi(new GuzzleHttp\Client(), $config);
+                $json = new \ai\thirdwatch\Model\CreateAccount($customerInfo);
+                $result = $api_instance->createAccount($json);
+            }
+            catch (\Throwable $e) {
+                $this->write_debug_log($e->getMessage());
+            }
 
-        try{
-            $sessionInfo['_user_id'] = (string) $customer_id;
-            $sessionInfo['_session_id'] = (string) WC()->session->get_customer_id();
-            $api_instance2 = new \ai\thirdwatch\Api\LinkSessionToUserApi(new GuzzleHttp\Client(), $config);
-            $json2 = new \ai\thirdwatch\Model\LinkSessionToUser($sessionInfo);
-            $result2 = $api_instance2->linkSessionToUser($json2);
-        }
-        catch (\Throwable $e) {
-            $this->write_debug_log($e->getMessage());
+            try{
+                $sessionInfo['_user_id'] = (string) $customer_id;
+                $sessionInfo['_session_id'] = (string) WC()->session->get_customer_id();
+                $api_instance2 = new \ai\thirdwatch\Api\LinkSessionToUserApi(new GuzzleHttp\Client(), $config);
+                $json2 = new \ai\thirdwatch\Model\LinkSessionToUser($sessionInfo);
+                $result2 = $api_instance2->linkSessionToUser($json2);
+            }
+            catch (\Throwable $e) {
+                $this->write_debug_log($e->getMessage());
+            }
         }
     }
 
@@ -360,46 +364,50 @@ final class Thirdwatch {
     }
 
     public function get_orders($order_id){
-        try {
-            global $wpdb;
-            $this->order = wc_get_order($order_id);
+        if ($this->enabled == 'yes'){
+            try {
+                global $wpdb;
+                $this->order = wc_get_order($order_id);
 
-            if ($this->order->status == "processing"){
+                if ($this->order->status == "processing"){
 
-                $tablename = $wpdb->prefix.'tw_orders';
-                $result = $wpdb->get_results ( "SELECT * FROM  ".$tablename ." WHERE order_id = '".$order_id."'" );
-                if ($result){
-                    return;
+                    $tablename = $wpdb->prefix.'tw_orders';
+                    $result = $wpdb->get_results ( "SELECT * FROM  ".$tablename ." WHERE order_id = '".$order_id."'" );
+                    if ($result){
+                        return;
+                    }
+
+                    $this->write_debug_log("Order sent to Thirdwatch. Order Id - ".$order_id);
+                    $this->tw_order_transaction();
                 }
-
-                $this->write_debug_log("Order sent to Thirdwatch. Order Id - ".$order_id);
-                $this->tw_order_transaction();
             }
-        }
-        catch (\Throwable $e) {
-            $this->write_debug_log($e->getMessage());
+            catch (\Throwable $e) {
+                $this->write_debug_log($e->getMessage());
+            }
         }
     }
 
     public function order_status_changed($order_id, $old_status, $new_status){
-        $config = \ai\thirdwatch\Configuration::getDefaultConfiguration()->setApiKey('X-THIRDWATCH-API-KEY', $this->api_key);
-        $this->order = wc_get_order( $order_id );
+        if ($this->enabled == 'yes'){
+            $config = \ai\thirdwatch\Configuration::getDefaultConfiguration()->setApiKey('X-THIRDWATCH-API-KEY', $this->api_key);
+            $this->order = wc_get_order( $order_id );
 
-        global $wpdb;
-        $tablename = $wpdb->prefix.'tw_orders';
-        $result = $wpdb->get_results ( "SELECT * FROM  ".$tablename ." WHERE order_id = '".$order_id."'" );
-        $orderInfo = array();
+            global $wpdb;
+            $tablename = $wpdb->prefix.'tw_orders';
+            $result = $wpdb->get_results ( "SELECT * FROM  ".$tablename ." WHERE order_id = '".$order_id."'" );
+            $orderInfo = array();
 
-        if ($result){
-            try{
-                $orderInfo['_order_id'] = (string) $this->order->get_order_number();
-                $orderInfo['_order_status'] = (string) "_wo_".$new_status;
-                $api_instance = new \ai\thirdwatch\Api\OrderStatusApi(new GuzzleHttp\Client(), $config);
-                $json = new \ai\thirdwatch\Model\OrderStatus($orderInfo);
-                $result2 = $api_instance->orderStatus($json);
-            }
-            catch (\Throwable $e) {
-                $this->write_debug_log($e->getMessage());
+            if ($result){
+                try{
+                    $orderInfo['_order_id'] = (string) $this->order->get_order_number();
+                    $orderInfo['_order_status'] = (string) "_wo_".$new_status;
+                    $api_instance = new \ai\thirdwatch\Api\OrderStatusApi(new GuzzleHttp\Client(), $config);
+                    $json = new \ai\thirdwatch\Model\OrderStatus($orderInfo);
+                    $result2 = $api_instance->orderStatus($json);
+                }
+                catch (\Throwable $e) {
+                    $this->write_debug_log($e->getMessage());
+                }
             }
         }
     }
