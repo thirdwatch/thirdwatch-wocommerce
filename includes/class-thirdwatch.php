@@ -248,14 +248,15 @@ final class Thirdwatch {
                         $this->order = wc_get_order($order_id);
 
                         if ($action_type == "declined") {
-                            if ($this->reject_status && $this->reject_status != $this->order->get_status()) {
+                            if ($this->reject_status && $this->reject_status != $this->order->get_status() && $this->review_status == $this->order->get_status()) {
                                 $this->order->update_status($this->reject_status, __('Updated by Thirdwatch: ', $this->namespace));
                             }
                         } elseif ($action_type == "approved") {
-                            if ($this->approve_status && $this->approve_status != $this->order->get_status()) {
+                            if ($this->approve_status && $this->approve_status != $this->order->get_status() && $this->review_status == $this->order->get_status()) {
                                 $this->order->update_status($this->approve_status, __('Updated by Thirdwatch: ', $this->namespace));
                             }
                         }
+
                         $response_score['Success'] = "Success";
                         return new WP_REST_Response($response_score, 200, array('content-type'=>'application/json'));
                     }
@@ -389,6 +390,8 @@ final class Thirdwatch {
 
     public function order_status_changed($order_id, $old_status, $new_status){
         if ($this->enabled == 'yes'){
+            $dt = new DateTime();
+
             $config = \ai\thirdwatch\Configuration::getDefaultConfiguration()->setApiKey('X-THIRDWATCH-API-KEY', $this->api_key);
             $this->order = wc_get_order( $order_id );
 
@@ -406,6 +409,32 @@ final class Thirdwatch {
                     $result2 = $api_instance->orderStatus($json);
                 }
                 catch (\Throwable $e) {
+                    $this->write_debug_log($e->getMessage());
+                }
+
+                try{
+                    if ($old_status == $this->review_status && $result[0]->status == "FLAGGED" && $result[0]->action == ""){
+
+                        $secret = $this->api_key;
+                        $jsonRequest = array(
+                            'secret'=>$secret,
+                            'order_id'=>$this->order->get_order_number(),
+                            'order_timestamp'=>(string) ($this->order->get_date_created()->getTimestamp() * 1000),
+                            'action_type' =>'approved',
+                            'message' =>'Accepted on clients dashboard. New Status: '.$new_status,
+                        );
+
+                        $response = wp_remote_post("https://api.thirdwatch.ai/neo/v1/clientaction", array(
+                            'method' => 'POST',
+                            'headers' => array('Content-Type' => 'application/json; charset=utf-8'),
+                            'httpversion' => '1.0',
+                            'sslverify' => false,
+                            'body' => json_encode($jsonRequest)
+                        ));
+                        $customers = $wpdb->update("wp_tw_orders", array("action" => 'APPROVED', "message" => 'Accepted on clients dashboard. New Status: '.$new_status, "date_modified" => $dt->format('Y-m-d H:i:s')), array("order_id" => $this->order->get_order_number()));
+                    }
+                }
+                catch (\Throwable $e){
                     $this->write_debug_log($e->getMessage());
                 }
             }
