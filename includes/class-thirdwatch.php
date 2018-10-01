@@ -248,14 +248,15 @@ final class Thirdwatch {
                         $this->order = wc_get_order($order_id);
 
                         if ($action_type == "declined") {
-                            if ($this->reject_status && $this->reject_status != $this->order->get_status()) {
+                            if ($this->reject_status && $this->reject_status != $this->order->get_status() && $this->review_status == $this->order->get_status()) {
                                 $this->order->update_status($this->reject_status, __('Updated by Thirdwatch: ', $this->namespace));
                             }
                         } elseif ($action_type == "approved") {
-                            if ($this->approve_status && $this->approve_status != $this->order->get_status()) {
+                            if ($this->approve_status && $this->approve_status != $this->order->get_status() && $this->review_status == $this->order->get_status()) {
                                 $this->order->update_status($this->approve_status, __('Updated by Thirdwatch: ', $this->namespace));
                             }
                         }
+
                         $response_score['Success'] = "Success";
                         return new WP_REST_Response($response_score, 200, array('content-type'=>'application/json'));
                     }
