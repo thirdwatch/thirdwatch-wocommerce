@@ -706,26 +706,11 @@ final class Thirdwatch {
 
         $form_status = '';
         $wc_order_statuses = array();
-
-        if ( ! tw_is_osm_active() ) {
-            $wc_order_statuses = array(
-                ''              => 'No Status Change',
-                'wc-pending'    => 'Pending Payment',
-                'wc-processing' => 'Processing',
-                'wc-on-hold'    => 'On Hold',
-                'wc-completed'  => 'Completed',
-                'wc-cancelled'  => 'Cancelled',
-                'wc-refunded'   => 'Refunded',
-                'wc-failed'     => 'Failed',
-            );
-        }
-        else {
-            global $wpdb;
-            $tablename = $wpdb->prefix.'posts';
-            $result = $wpdb->get_results ( "SELECT post_title, post_name FROM  ".$tablename ." WHERE post_type = 'wc_order_status' and post_status = 'publish'" );
-            foreach ( $result as $value){
-                $wc_order_statuses[$value->post_name] = $value->post_title;
-            }
+        global $wpdb;
+        $tablename = $wpdb->prefix.'posts';
+        $result = $wpdb->get_results ( "SELECT post_title, post_name FROM  ".$tablename ." WHERE post_type = 'wc_order_status' and post_status = 'publish'" );
+        foreach ( $result as $value){
+            $wc_order_statuses[$value->post_name] = $value->post_title;
         }
 
         $enable_wc_tw = ( isset( $_POST['submit'] ) && isset( $_POST['enable_wc_tw'] ) ) ? 'yes' : ( ( ( isset( $_POST['submit'] ) && !isset( $_POST['enable_wc_tw'] ) ) ) ? 'no' : $this->get_setting( 'enabled' ) );
