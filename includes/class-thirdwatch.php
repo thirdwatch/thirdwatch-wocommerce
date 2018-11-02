@@ -73,9 +73,9 @@ final class Thirdwatch {
         $this->namespace			= 'woocommerce-thirdwatch';
         $this->enabled				= $this->get_setting( 'enabled' );
         $this->api_key				= $this->get_setting( 'api_key' );
-        $this->approve_status		= $this->get_setting( 'approve_status' );
-        $this->review_status		= $this->get_setting( 'review_status' );
-        $this->reject_status		= $this->get_setting( 'reject_status' );
+        $this->approve_status		= 'wc-' === substr( $this->get_setting( 'approve_status' ), 0, 3 ) ? substr( $this->get_setting( 'approve_status' ), 3 ) : $this->get_setting( 'approve_status' );
+        $this->review_status		= 'wc-' === substr( $this->get_setting( 'review_status' ), 0, 3 ) ? substr( $this->get_setting( 'review_status' ), 3 ) : $this->get_setting( 'review_status' ); $this->get_setting( 'review_status' );
+        $this->reject_status		= 'wc-' === substr( $this->get_setting( 'reject_status' ), 0, 3 ) ? substr( $this->get_setting( 'reject_status' ), 3 ) : $this->get_setting( 'reject_status' );
         $this->fraud_message		= $this->get_setting( 'fraud_message' );
         $this->debug_log			= $this->get_setting( 'debug_log' );
     }
@@ -706,11 +706,18 @@ final class Thirdwatch {
 
         $form_status = '';
         $wc_order_statuses = array();
-        global $wpdb;
-        $tablename = $wpdb->prefix.'posts';
-        $result = $wpdb->get_results ( "SELECT post_title, post_name FROM  ".$tablename ." WHERE post_type = 'wc_order_status' and post_status = 'publish'" );
-        foreach ( $result as $value){
-            $wc_order_statuses[$value->post_name] = $value->post_title;
+
+        if ( ! tw_is_osm_active() ) {
+            $wc_order_statuses = function_exists( 'wc_get_order_statuses' ) ? wc_get_order_statuses() : array();
+        }
+        else {
+
+            global $wpdb;
+            $tablename = $wpdb->prefix . 'posts';
+            $result = $wpdb->get_results("SELECT post_title, post_name FROM  " . $tablename . " WHERE post_type = 'wc_order_status' and post_status = 'publish'");
+            foreach ($result as $value) {
+                $wc_order_statuses[$value->post_name] = $value->post_title;
+            }
         }
 
         $enable_wc_tw = ( isset( $_POST['submit'] ) && isset( $_POST['enable_wc_tw'] ) ) ? 'yes' : ( ( ( isset( $_POST['submit'] ) && !isset( $_POST['enable_wc_tw'] ) ) ) ? 'no' : $this->get_setting( 'enabled' ) );
